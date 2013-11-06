@@ -23,11 +23,13 @@ PRODUCT_PACKAGES += \
     BasicDreams \
     Browser \
     Contacts \
-    ContactsProvider \
-    DefaultContainerService \
-    Home \
+    DocumentsUI \
+    DownloadProviderUi \
+    ExternalStorageProvider \
     KeyChain \
     PicoTts \
+    PacProcessor \
+    ProxyHandler \
     SharedStorageBackup \
     TelephonyProvider \
     UserDictionaryProvider \
@@ -70,21 +72,6 @@ PRODUCT_PACKAGES += \
     requestsync \
     telephony-common \
     voip-common
+    VpnDialogs
 
-# host-only dependencies
-ifeq ($(WITH_HOST_DALVIK),true)
-    PRODUCT_PACKAGES += \
-        apache-xml-hostdex \
-        bouncycastle-hostdex \
-        core-hostdex \
-        libcrypto \
-        libexpat \
-        libicui18n \
-        libicuuc \
-        libjavacore \
-        libssl \
-        libz-host \
-        dalvik
-endif
-
-$(call inherit-product, $(SRC_TARGET_DIR)/product/core_minimal.mk)
+$(call inherit-product, $(SRC_TARGET_DIR)/product/core_base.mk)

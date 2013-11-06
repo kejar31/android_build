@@ -34,7 +34,6 @@ pathmap_INCL := \
     frameworks-native:frameworks/native/include \
     graphics:external/skia/include/core \
     libc:bionic/libc/include \
-    libdrm1:frameworks/base/media/libdrm/mobile1/include \
     libhardware:hardware/libhardware/include \
     libhardware_legacy:hardware/libhardware_legacy/include \
     libhost:build/libs/host/include \
@@ -46,7 +45,6 @@ pathmap_INCL := \
     libthread_db:bionic/libthread_db/include \
     mkbootimg:system/core/mkbootimg \
     opengl-tests-includes:frameworks/native/opengl/tests/include \
-    recovery:bootable/recovery \
     system-core:system/core/include \
     audio-effects:system/media/audio_effects/include \
     audio-utils:system/media/audio_utils/include \
@@ -54,6 +52,12 @@ pathmap_INCL := \
     wilhelm:frameworks/wilhelm/include \
     wilhelm-ut:frameworks/wilhelm/src/ut \
     speex:external/speex/include
+
+ifneq ($(WITH_SIMPLE_RECOVERY),true)
+    pathmap_INCL += recovery:bootable/recovery
+else
+    pathmap_INCL += recovery:bootable/simplerecovery
+endif
 
 #
 # Returns the path to the requested module's include directory,
@@ -75,11 +79,6 @@ JNI_H_INCLUDE := $(call include-path-for,libnativehelper)/nativehelper
 #
 # A list of all source roots under frameworks/base, which will be
 # built into the android.jar.
-#
-# Note - "common" is included here, even though it is also built
-# into a static library (android-common) for unbundled use.  This
-# is so common and the other framework libraries can have mutual
-# interdependencies.
 #
 FRAMEWORKS_BASE_SUBDIRS := \
 	$(addsuffix /java, \

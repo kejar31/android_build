@@ -23,6 +23,8 @@ comma := ,
 # only has an effect on python 2.6 and above.
 export PYTHONDONTWRITEBYTECODE := 1
 
+-include $(TOPDIR)vendor/extra/extra_config.mk
+
 # Standard source directories.
 SRC_DOCS:= $(TOPDIR)docs
 # TODO: Enforce some kind of layering; only add include paths
@@ -123,7 +125,7 @@ TARGET_SHELL := mksh
 
 # ---------------------------------------------------------------
 # Try to include buildspec.mk, which will try to set stuff up.
-# If this file doesn't exist, the environemnt variables will
+# If this file doesn't exist, the environment variables will
 # be used, and if that doesn't work, then the default is an
 # arm build
 ifndef ANDROID_BUILDSPEC
@@ -143,8 +145,8 @@ include $(BUILD_SYSTEM)/envsetup.mk
 board_config_mk := \
 	$(strip $(wildcard \
 		$(SRC_TARGET_DIR)/board/$(TARGET_DEVICE)/BoardConfig.mk \
-		device/*/$(TARGET_DEVICE)/BoardConfig.mk \
-		vendor/*/$(TARGET_DEVICE)/BoardConfig.mk \
+		$(shell test -d device && find device -maxdepth 4 -path '*/$(TARGET_DEVICE)/BoardConfig.mk') \
+		$(shell test -d vendor && find vendor -maxdepth 4 -path '*/$(TARGET_DEVICE)/BoardConfig.mk') \
 	))
 ifeq ($(board_config_mk),)
   $(error No config file found for TARGET_DEVICE $(TARGET_DEVICE))
@@ -158,6 +160,26 @@ ifeq ($(TARGET_ARCH),)
 endif
 TARGET_DEVICE_DIR := $(patsubst %/,%,$(dir $(board_config_mk)))
 board_config_mk :=
+
+# Perhaps we should move this block to build/core/Makefile,
+# once we don't have TARGET_NO_KERNEL reference in AndroidBoard.mk/Android.mk.
+ifneq ($(strip $(TARGET_NO_BOOTLOADER)),true)
+  INSTALLED_BOOTLOADER_MODULE := $(PRODUCT_OUT)/bootloader
+  ifeq ($(strip $(TARGET_BOOTLOADER_IS_2ND)),true)
+    INSTALLED_2NDBOOTLOADER_TARGET := $(PRODUCT_OUT)/2ndbootloader
+  else
+    INSTALLED_2NDBOOTLOADER_TARGET :=
+  endif
+else
+  INSTALLED_BOOTLOADER_MODULE :=
+  INSTALLED_2NDBOOTLOADER_TARGET :=
+endif # TARGET_NO_BOOTLOADER
+ifneq ($(strip $(TARGET_NO_KERNEL)),true)
+  INSTALLED_KERNEL_TARGET := $(PRODUCT_OUT)/kernel
+else
+  INSTALLED_KERNEL_TARGET :=
+endif
+
 
 # The build system exposes several variables for where to find the kernel
 # headers:
@@ -421,6 +443,11 @@ HOST_GLOBAL_CPPFLAGS += $(HOST_RELEASE_CPPFLAGS)
 TARGET_GLOBAL_CFLAGS += $(TARGET_RELEASE_CFLAGS)
 TARGET_GLOBAL_CPPFLAGS += $(TARGET_RELEASE_CPPFLAGS)
 
+# allow overriding default Java libraries on a per-target basis
+ifeq ($(TARGET_DEFAULT_JAVA_LIBRARIES),)
+  TARGET_DEFAULT_JAVA_LIBRARIES := core core-junit ext framework framework2
+endif
+
 # define llvm tools and global flags
 include $(BUILD_SYSTEM)/llvm_config.mk
 
@@ -463,5 +490,11 @@ TARGET_PREBUILT_TAG := android-$(TARGET_ARCH)
 RS_PREBUILT_CLCORE := prebuilts/sdk/renderscript/lib/$(TARGET_ARCH)/libclcore.bc
 RS_PREBUILT_LIBPATH := -L prebuilts/ndk/8/platforms/android-9/arch-$(TARGET_ARCH)/usr/lib
 RS_PREBUILT_COMPILER_RT := prebuilts/sdk/renderscript/lib/$(TARGET_ARCH)/libcompiler_rt.a
+
+ifneq ($(CM_BUILD),)
+## We need to be sure the global selinux policies are included
+## last, to avoid accidental resetting by device configs
+$(eval include vendor/cm/sepolicy/sepolicy.mk)
+endif
 
 include $(BUILD_SYSTEM)/dumpvar.mk
