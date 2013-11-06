@@ -1406,7 +1406,6 @@ else
     OTA_FROM_TARGET_SCRIPT := $(TARGET_RELEASETOOL_OTA_FROM_TARGET_SCRIPT)
 endif
 
-)
 ifneq ($(TG_BUILD),)
     $(INTERNAL_OTA_PACKAGE_TARGET): backuptool := true
 else
